@@ -3,9 +3,9 @@ import time
 import json
 import os
 import sys
+import random
 from datetime import datetime, timezone
 
-# Sprawdzamy, czy tenacity jest dostępne
 try:
     from tenacity import (
         retry,
@@ -14,9 +14,7 @@ try:
         retry_if_exception_type,
         RetryError
     )
-    TENACITY_AVAILABLE = True
 except ImportError:
-    TENACITY_AVAILABLE = False
     print("!!! Brak biblioteki 'tenacity'. Zainstaluj ją: pip install tenacity")
     sys.exit(1)
 
@@ -29,8 +27,9 @@ BASE_URL = "https://steamcommunity.com/market/search/render/"
 OUTPUT_PATH = "docs/data/items.json"
 PROGRESS_FILE = "scraper/progress.json"
 MAX_PAGES = 300
-DELAY_BETWEEN_PAGES = 4.0   # dodatkowy odstęp po udanej stronie
-START_DELAY = 5             # opóźnienie przed pierwszym zapytaniem
+DELAY_MIN = 5.0        # minimalny odstęp między stronami
+DELAY_MAX = 9.0        # maksymalny odstęp
+START_DELAY = 10       # dłuższa przerwa przed rozpoczęciem
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -47,7 +46,6 @@ class SteamMarketScraper:
         self._init_session()
 
     def _init_session(self):
-        """Odwiedza stronę główną rynku, aby uzyskać ciasteczka sesji."""
         print("Inicjalizacja sesji (pobieranie ciasteczek ze strony głównej rynku)...")
         try:
             resp = self.session.get(
@@ -58,11 +56,10 @@ class SteamMarketScraper:
             print("  Ciasteczka pobrane pomyślnie.")
         except Exception as e:
             print(f"  Ostrzeżenie: nie udało się pobrać ciasteczek: {e}")
-            # kontynuujemy mimo to
 
     @retry(
         stop=stop_after_attempt(5),
-        wait=wait_exponential(multiplier=5, min=10, max=120),
+        wait=wait_exponential(multiplier=8, min=15, max=180),
         retry=retry_if_exception_type((RequestException, ValueError, KeyError)),
         reraise=True
     )
@@ -128,7 +125,10 @@ class SteamMarketScraper:
                 if start >= self.total_count:
                     break
 
-                time.sleep(DELAY_BETWEEN_PAGES)
+                # Losowa przerwa między stronami
+                delay = random.uniform(DELAY_MIN, DELAY_MAX)
+                print(f"  Czekam {delay:.1f} s...")
+                time.sleep(delay)
 
             except RetryError as e:
                 print(f"\n!! Strona start={start} NIE pobrana po 5 próbach. Błąd: {e.last_attempt.exception()}")
