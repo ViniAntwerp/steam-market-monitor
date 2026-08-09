@@ -94,7 +94,37 @@ function applyFilters() {
         var pricePLN = item.sell_price_grosz / 100;
         if (pricePLN < minPrice || pricePLN > maxPrice) return false;
 
-        if (selectedCategories.length > 0 && selectedCategories.indexOf(item.type) === -1) return false;
+        // Filtrowanie kategorii – częściowe dopasowanie
+        if (selectedCategories.length > 0) {
+            var matches = false;
+            for (var j = 0; j < selectedCategories.length; j++) {
+                var cat = selectedCategories[j];
+                if (cat === 'Container' && item.type.indexOf('Container') !== -1) {
+                    matches = true;
+                    break;
+                }
+                if (cat === 'Weapon' && item.type.indexOf('Weapon') !== -1) {
+                    matches = true;
+                    break;
+                }
+                // Naklejki: typ zawiera "Sticker", ale NIE "Sticker Capsule"
+                if (cat === 'Sticker' && item.type.indexOf('Sticker') !== -1 && item.type.indexOf('Sticker Capsule') === -1) {
+                    matches = true;
+                    break;
+                }
+                // Kapsułki: dokładnie "Sticker Capsule" (lub zawiera, jeśli są warianty)
+                if (cat === 'Sticker Capsule' && item.type.indexOf('Sticker Capsule') !== -1) {
+                    matches = true;
+                    break;
+                }
+                // Agenci i Music Kit – dokładne dopasowanie (Steam raczej nie zmienia)
+                if ((cat === 'Agent' || cat === 'Music Kit') && item.type === cat) {
+                    matches = true;
+                    break;
+                }
+            }
+            if (!matches) return false;
+        }
 
         if (useVolumeFilter && item.sell_volume <= item.sell_listings) return false;
 
