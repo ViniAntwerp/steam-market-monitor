@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Market Monitor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Monitor Rynku Steam (CS2)</h1>
+        <div id="data-info">Ładowanie danych...</div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>Cena (PLN)</label>
+                <div class="price-sliders">
+                    <div class="slider-row">
+                        <span>Od:</span>
+                        <input type="range" id="price-min-slider" min="0" max="5000" value="0" step="0.01">
+                        <input type="number" id="price-min-input" value="0.00" step="0.01" min="0" max="5000" class="price-input">
+                    </div>
+                    <div class="slider-row">
+                        <span>Do:</span>
+                        <input type="range" id="price-max-slider" min="0" max="5000" value="5000" step="0.01">
+                        <input type="number" id="price-max-input" value="5000.00" step="0.01" min="0" max="5000" class="price-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Kategorie przedmiotów:</label>
+                <div class="categories">
+                    <label><input type="checkbox" class="cat-check" value="Container"> Skrzynki</label>
+                    <label><input type="checkbox" class="cat-check" value="Weapon"> Bronie</label>
+                    <label><input type="checkbox" class="cat-check" value="Sticker"> Naklejki</label>
+                    <label><input type="checkbox" class="cat-check" value="Sticker Capsule"> Kapsułki</label>
+                    <label><input type="checkbox" class="cat-check" value="Agent"> Agenci</label>
+                    <label><input type="checkbox" class="cat-check" value="Music Kit"> Music Kit</label>
+                </div>
+            </div>
+            <button id="reset-filters">Wyczyść filtry</button>
+        </div>
+
+        <div id="results-summary"></div>
+        <div id="items-list"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
