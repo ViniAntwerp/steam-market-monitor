@@ -4,13 +4,22 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-    RetryError
-)
+
+# Sprawdzamy, czy tenacity jest dostępne
+try:
+    from tenacity import (
+        retry,
+        stop_after_attempt,
+        wait_exponential,
+        retry_if_exception_type,
+        RetryError
+    )
+    TENACITY_AVAILABLE = True
+except ImportError:
+    TENACITY_AVAILABLE = False
+    print("!!! Brak biblioteki 'tenacity'. Zainstaluj ją: pip install tenacity")
+    sys.exit(1)
+
 from requests.exceptions import RequestException
 
 APP_ID = 730
@@ -20,10 +29,13 @@ BASE_URL = "https://steamcommunity.com/market/search/render/"
 OUTPUT_PATH = "docs/data/items.json"
 PROGRESS_FILE = "scraper/progress.json"
 MAX_PAGES = 300
-DELAY_BETWEEN_PAGES = 3.5
+DELAY_BETWEEN_PAGES = 4.0   # dodatkowy odstęp po udanej stronie
+START_DELAY = 5             # opóźnienie przed pierwszym zapytaniem
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
 }
 
 class SteamMarketScraper:
@@ -32,10 +44,25 @@ class SteamMarketScraper:
         self.total_count = None
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
+        self._init_session()
+
+    def _init_session(self):
+        """Odwiedza stronę główną rynku, aby uzyskać ciasteczka sesji."""
+        print("Inicjalizacja sesji (pobieranie ciasteczek ze strony głównej rynku)...")
+        try:
+            resp = self.session.get(
+                "https://steamcommunity.com/market/",
+                timeout=30
+            )
+            resp.raise_for_status()
+            print("  Ciasteczka pobrane pomyślnie.")
+        except Exception as e:
+            print(f"  Ostrzeżenie: nie udało się pobrać ciasteczek: {e}")
+            # kontynuujemy mimo to
 
     @retry(
         stop=stop_after_attempt(5),
-        wait=wait_exponential(multiplier=5, min=5, max=60),
+        wait=wait_exponential(multiplier=5, min=10, max=120),
         retry=retry_if_exception_type((RequestException, ValueError, KeyError)),
         reraise=True
     )
@@ -74,6 +101,10 @@ class SteamMarketScraper:
 
     def scrape(self, resume_from=0):
         start = resume_from
+        if start == 0:
+            print(f"Czekam {START_DELAY} s przed rozpoczęciem scrapowania...")
+            time.sleep(START_DELAY)
+
         for page in range(MAX_PAGES):
             try:
                 print(f"Pobieranie strony start={start}...")
