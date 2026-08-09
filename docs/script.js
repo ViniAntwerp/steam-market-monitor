@@ -70,7 +70,7 @@ function setupFilters() {
     volumeFilter.addEventListener('change', applyFilters);
 
     document.getElementById('reset-filters').addEventListener('click', function() {
-        checkboxes.forEach(function(cb) { cb.checked = true; });
+        checkboxes.forEach(function(cb) { cb.checked = false; });
         minSlider.value = 0;
         minInput.value = '0.00';
         maxSlider.value = 5000;
