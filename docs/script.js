@@ -25,6 +25,7 @@ function setupFilters() {
     const minInput = document.getElementById('price-min-input');
     const maxInput = document.getElementById('price-max-input');
     const checkboxes = document.querySelectorAll('.cat-check');
+    const volumeFilter = document.getElementById('volume-filter');
 
     function syncMin(val) {
         minSlider.value = val;
@@ -60,12 +61,15 @@ function setupFilters() {
     });
 
     checkboxes.forEach(cb => cb.addEventListener('change', applyFilters));
+    volumeFilter.addEventListener('change', applyFilters);
+
     document.getElementById('reset-filters').addEventListener('click', () => {
         checkboxes.forEach(cb => cb.checked = false);
         minSlider.value = 0;
         minInput.value = '0.00';
         maxSlider.value = 5000;
         maxInput.value = '5000.00';
+        volumeFilter.checked = true;
         applyFilters();
     });
 }
@@ -74,6 +78,7 @@ function applyFilters() {
     const minPrice = parseFloat(document.getElementById('price-min-slider').value);
     const maxPrice = parseFloat(document.getElementById('price-max-slider').value);
     const selectedCategories = Array.from(document.querySelectorAll('.cat-check:checked')).map(cb => cb.value);
+    const useVolumeFilter = document.getElementById('volume-filter').checked;
 
     currentFiltered = allItems.filter(item => {
         const pricePLN = item.sell_price_grosz / 100;
@@ -81,7 +86,8 @@ function applyFilters() {
 
         if (selectedCategories.length > 0 && !selectedCategories.includes(item.type)) return false;
 
-        if (item.sell_volume <= item.sell_listings) return false;
+        // Warunek wolumenu tylko wtedy, gdy checkbox jest zaznaczony
+        if (useVolumeFilter && item.sell_volume <= item.sell_listings) return false;
 
         return true;
     });
